@@ -7480,7 +7480,11 @@
     <field number="605" name="LegSecurityAltID" type="STRING"/>
     <field number="606" name="LegSecurityAltIDSource" type="STRING"/>
     <field number="607" name="LegProduct" type="INT"/>
-    <field number="608" name="LegCFICode" type="STRING"/>
+    <field number="608" name="LegCFICode" type="STRING">
+      <value enum="OC" description="OPTION_CALL" />
+      <value enum="OP" description="OPTION_PUT" />
+      <value enum="ES" description="EQUITY_COMMON_SHARES" />
+    </field>
     <field number="609" name="LegSecurityType" type="STRING"/>
     <field number="610" name="LegMaturityMonthYear" type="MONTHYEAR"/>
     <field number="611" name="LegMaturityDate" type="LOCALMKTDATE"/>

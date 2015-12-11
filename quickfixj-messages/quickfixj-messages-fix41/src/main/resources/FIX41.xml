@@ -417,6 +417,7 @@
       <field name="OrderID" required="N"/>
       <field name="ClOrdID" required="Y"/>
       <field name="ListID" required="N"/>
+      <field name="Account" required="N"/>
       <field name="ClientID" required="N"/>
       <field name="ExecBroker" required="N"/>
       <field name="Symbol" required="Y"/>
@@ -1264,5 +1265,8 @@
     </field>
     <field number="210" name="MaxShow" type="INT"/>
     <field number="211" name="PegDifference" type="FLOAT"/>
+
+      <!-- Field for INET connection -->
+      <field number="9882" name="TargetCompIDInet" type="STRING" required="false" />
   </fields>
 </fix>
