@@ -7608,7 +7608,10 @@
       <value enum="1" description="REPORT_BY_MULTILEG_SECURITY_AND_BY_INSTRUMENT_LEGS_BELONGING_TO_THE_MULTILEG_SECURITY"/>
       <value enum="2" description="REPORT_BY_INSTRUMENT_LEGS_BELONGING_TO_THE_MULTILEG_SECURITY_ONLY"/>
     </field>
-    <field number="564" name="LegPositionEffect" type="CHAR"/>
+    <field number="564" name="LegPositionEffect" type="CHAR">
+      <value enum="O" description="OPEN"/>
+      <value enum="C" description="CLOSE"/>
+    </field>
     <field number="565" name="LegCoveredOrUncovered" type="INT"/>
     <field number="566" name="LegPrice" type="PRICE"/>
     <field number="567" name="TradSesStatusRejReason" type="INT">
