@@ -2889,8 +2889,8 @@
         <field number="440" name="ClearingAccount" type="STRING"/>
         <field number="441" name="LiquidityNumSecurities" type="INT"/>
         <field number="442" name="MultiLegReportingType" type="CHAR">
-            <!-- Required for Citi -->
             <value enum="2" description="INDIVIDUAL_LEG_OF_A_MULTI_LEG_SECURITY"/>
+            <value enum="3" description="MULTI_LEG_SECURITY"/>
         </field>
         <field number="443" name="StrikeTime" type="UTCTIMESTAMP"/>
         <field number="444" name="ListStatusText" type="STRING"/>
