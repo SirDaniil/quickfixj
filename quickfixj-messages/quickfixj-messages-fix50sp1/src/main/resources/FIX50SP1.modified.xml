@@ -7342,7 +7342,10 @@
       <value enum="1" description="REPORT_BY_MULTILEG_SECURITY_AND_BY_INSTRUMENT_LEGS_BELONGING_TO_THE_MULTILEG_SECURITY"/>
       <value enum="2" description="REPORT_BY_INSTRUMENT_LEGS_BELONGING_TO_THE_MULTILEG_SECURITY_ONLY"/>
     </field>
-    <field number="564" name="LegPositionEffect" type="CHAR"/>
+    <field number="564" name="LegPositionEffect" type="CHAR">
+      <value enum="O" description="OPEN"/>
+      <value enum="C" description="CLOSE"/>
+    </field>
     <field number="565" name="LegCoveredOrUncovered" type="INT"/>
     <field number="566" name="LegPrice" type="PRICE"/>
     <field number="567" name="TradSesStatusRejReason" type="INT">
@@ -7480,7 +7483,11 @@
     <field number="605" name="LegSecurityAltID" type="STRING"/>
     <field number="606" name="LegSecurityAltIDSource" type="STRING"/>
     <field number="607" name="LegProduct" type="INT"/>
-    <field number="608" name="LegCFICode" type="STRING"/>
+    <field number="608" name="LegCFICode" type="STRING">
+      <value enum="OC" description="OPTION_CALL" />
+      <value enum="OP" description="OPTION_PUT" />
+      <value enum="ES" description="EQUITY_COMMON_SHARES" />
+    </field>
     <field number="609" name="LegSecurityType" type="STRING"/>
     <field number="610" name="LegMaturityMonthYear" type="MONTHYEAR"/>
     <field number="611" name="LegMaturityDate" type="LOCALMKTDATE"/>

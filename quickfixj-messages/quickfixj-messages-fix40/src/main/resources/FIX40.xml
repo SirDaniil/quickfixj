@@ -227,6 +227,9 @@
       <field name="SettlCurrAmt" required="N"/>
       <field name="SettlCurrency" required="N"/>
       <field name="Text" required="N"/>
+
+        <!-- Field coming from INET -->
+        <field name="TargetCompIDInet" required="N" />
     </message>
     <message name="DontKnowTrade" msgtype="Q" msgcat="app">
       <field name="OrderID" required="N"/>
@@ -274,6 +277,7 @@
       <field name="ForexReq" required="N"/>
       <field name="SettlCurrency" required="N"/>
       <field name="Text" required="N"/>
+      <field name="LocateReqd" required="N" />
     </message>
     <message name="OrderCancelRequest" msgtype="F" msgcat="app">
       <field name="OrigClOrdID" required="Y"/>
@@ -292,6 +296,7 @@
       <field name="Side" required="Y"/>
       <field name="OrderQty" required="Y"/>
       <field name="Text" required="N"/>
+      <field name="LocateReqd" required="N" />
     </message>
     <message name="OrderCancelReject" msgtype="9" msgcat="app">
       <field name="OrderID" required="Y"/>
@@ -853,5 +858,8 @@
       <value enum="7" description="OTHER"/>
     </field>
     <field number="140" name="PrevClosePx" type="FLOAT"/>
+
+      <!-- Field for INET connection -->
+      <field number="9882" name="TargetCompIDInet" type="STRING" required="false" />
   </fields>
 </fix>
