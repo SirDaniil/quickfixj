@@ -1190,6 +1190,7 @@
             <group name="NoLegs" required="N">
                 <field name="LegRefID" required="Y"/>
                 <field name="LegSymbol" required="Y"/>
+                <field name="LegSymbolSfx" required="N"/>
                 <field name="LegCFICode" required="Y"/>
                 <field name="LegMaturityMonthYear" required="N"/>
                 <field name="LegMaturityDate" required="N"/>
@@ -1287,6 +1288,7 @@
             <group name="NoLegs" required="N">
                 <field name="LegRefID" required="Y"/>
                 <field name="LegSymbol" required="Y"/>
+                <field name="LegSymbolSfx" required="N"/>
                 <field name="LegCFICode" required="Y"/>
                 <field name="LegMaturityMonthYear" required="N"/>
                 <field name="LegMaturityDate" required="N"/>
@@ -1341,6 +1343,7 @@
             <group name="NoLegs" required="N">
                 <field name="LegRefID" required="Y"/>
                 <field name="LegSymbol" required="Y"/>
+                <field name="LegSymbolSfx" required="N"/>
                 <field name="LegCFICode" required="Y"/>
                 <field name="LegMaturityMonthYear" required="N"/>
                 <field name="LegMaturityDate" required="N"/>
@@ -1714,11 +1717,13 @@
             <field name="ClearingFirm" required="N"/>
             <field name="ClearingAccount" required="N"/>
             <field name="Symbol" required="N"/>
+            <field name="SymbolSfx" required="N"/>
             <field name="Rule80A" required="N"/>
             <field name="Side" required="N"/>
 
             <group name="NoLegs" required="Y">
                 <field name="LegSymbol" required="Y"/>
+                <field name="LegSymbolSfx" required="N"/>
                 <field name="LegRefID" required="Y"/>
                 <field name="LegCFICode" required="Y"/>
                 <field name="LegMaturityMonthYear" required="N"/>
@@ -2909,6 +2914,7 @@
             <value enum="ES" description="EQUITY_COMMON_SHARES"/>
         </field>
         <field number="600" name="LegSymbol" type="STRING"/>
+        <field number="601" name="LegSymbolSfx" type="STRING"/>
         <field number="610" name="LegMaturityMonthYear" type="MONTHYEAR"/>
         <field number="611" name="LegMaturityDate" type="MONTHYEAR"/>
         <field number="612" name="LegStrikePrice" type="PRICE"/>
