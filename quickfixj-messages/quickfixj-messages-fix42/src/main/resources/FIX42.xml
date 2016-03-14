@@ -841,6 +841,27 @@
             <field name="EncodedText" required="N"/>
         </message>
 
+        <message name="StockLocateRequest" msgtype="SL" msgcat="app">
+            <field name="Account" required="Y" />
+            <field name="ClOrdID" required="Y" />
+            <field name="Symbol" required="Y" />
+            <field name="SymbolSfx" required="N" />
+            <field name="OrderQty" required="Y" />
+            <field name="Text" required="N"/>
+        </message>
+
+        <message name="StockLocateReport" msgtype="SL8" msgcat="app">
+            <field name="Account" required="Y" />
+            <field name="ClOrdID" required="Y" />
+            <field name="ExecID" required="Y"/>
+            <field name="OrdStatus" required="Y" />
+            <field name="Symbol" required="Y" />
+            <field name="SymbolSfx" required="N" />
+            <field name="OrderQty" required="Y" />
+            <field name="LastShares" required="Y" />
+            <field name="Text" required="N"/>
+        </message>
+
         <message name="NewOrderALGO" msgtype="ALGO" msgcat="app">
             <field name="ClOrdID" required="Y"/>
             <field name="ClientID" required="N"/>
@@ -1984,6 +2005,8 @@
             <value enum="AB" description="NEW_ORDER_MULTILEG" />
             <value enum="AC" description="MULTILEG_ORDER_CANCEL" />
             <value enum="ALGO" description="ORDER_ALGO" />
+            <value enum="SL" description="STOCK_LOCATE" />
+            <value enum="SL8" description="STOCK_LOCATE_REPORT" />
         </field>
         <field number="36" name="NewSeqNo" type="INT"/>
         <field number="37" name="OrderID" type="STRING"/>
