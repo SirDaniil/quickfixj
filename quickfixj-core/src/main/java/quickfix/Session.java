@@ -381,7 +381,7 @@ public class Session implements Closeable {
     private boolean forceResendWhenCorruptedStore = false;
     private boolean enableNextExpectedMsgSeqNum = false;
     private boolean enableLastMsgSeqNumProcessed = false;
-    
+
     private int maxScheduledWriteRequests = 0;
 
     private final AtomicBoolean isResetting = new AtomicBoolean();
@@ -2216,7 +2216,7 @@ public class Session implements Closeable {
                  * may not have been realistic to production on the other hand.
                  * Apart from the else
                  */
-	        generateSequenceResetIfNeeded(receivedMessage, newBegin, endSeqNo, msgSeqNum);
+            generateSequenceResetIfNeeded(receivedMessage, newBegin, endSeqNo, msgSeqNum);
             }
         } else {
             if (begin != 0) {
@@ -2797,7 +2797,6 @@ public class Session implements Closeable {
     public void setMaxScheduledWriteRequests(int maxScheduledWriteRequests) {
         this.maxScheduledWriteRequests = maxScheduledWriteRequests;
     }
-    
 
     public void setIgnoreHeartBeatFailure(boolean ignoreHeartBeatFailure) {
         disableHeartBeatCheck = ignoreHeartBeatFailure;
