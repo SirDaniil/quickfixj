@@ -848,6 +848,29 @@
             <field name="EncodedText" required="N"/>
         </message>
 
+        <message name="StockLocateRequest" msgtype="SL" msgcat="app">
+            <field name="Account" required="Y" />
+            <field name="ClOrdID" required="Y" />
+            <field name="Symbol" required="Y" />
+            <field name="SymbolSfx" required="N" />
+            <field name="OrderQty" required="Y" />
+            <field name="Text" required="N"/>
+        </message>
+
+        <message name="StockLocateReport" msgtype="SL8" msgcat="app">
+            <field name="Account" required="Y" />
+            <field name="ClOrdID" required="Y" />
+            <field name="OrderID" required="Y"/>
+            <field name="ExecID" required="Y"/>
+            <field name="OrdStatus" required="Y" />
+            <field name="Symbol" required="Y" />
+            <field name="SymbolSfx" required="N" />
+            <field name="OrderQty" required="Y" />
+            <field name="LastShares" required="Y" />
+            <field name="Price" required="N" />
+            <field name="Text" required="N"/>
+        </message>
+
         <message name="NewOrderALGO" msgtype="ALGO" msgcat="app">
             <field name="ClOrdID" required="Y"/>
             <field name="ClientID" required="N"/>

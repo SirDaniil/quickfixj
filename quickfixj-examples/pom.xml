@@ -15,9 +15,9 @@
 	<url>http://www.quickfixj.org</url>
 
 	<modules>
-		<module>executor</module>
+		<!--<module>executor</module>
 		<module>ordermatch</module>
-		<module>banzai</module>
+		<module>banzai</module>-->
 	</modules>
 
 	<dependencies>
