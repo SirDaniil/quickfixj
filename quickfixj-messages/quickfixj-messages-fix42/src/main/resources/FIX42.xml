@@ -1736,6 +1736,7 @@
             <field name="Account" required="N"/>
             <field name="ClOrdID" required="Y"/>
             <field name="ExecInst" required="N"/>
+            <field name="HandlInst" required="N"/>
             <field name="OrderQty" required="Y"/>
             <field name="OrdType" required="Y"/>
             <field name="Price" required="N"/>
