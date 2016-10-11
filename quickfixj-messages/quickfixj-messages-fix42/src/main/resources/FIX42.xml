@@ -2972,6 +2972,7 @@
         <field number="9001" name="Strategy" type="STRING">
             <value enum="VWAP" description="VWAP" />
             <value enum="TWAP" description="TWAP" />
+            <value enum="POV" description="POV" />
         </field>
         <field number="9002" name="VolumeRate" type="FLOAT" />
         <field number="9003" name="StartTime" type="UTCTIMESTAMP" />
