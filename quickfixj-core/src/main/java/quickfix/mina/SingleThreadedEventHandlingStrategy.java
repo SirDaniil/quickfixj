@@ -1,4 +1,5 @@
-/*******************************************************************************
+/*
+ ******************************************************************************
  * Copyright (c) quickfixengine.org  All rights reserved.
  *
  * This file is part of the QuickFIX FIX Engine
@@ -19,15 +20,17 @@
 
 package quickfix.mina;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 import quickfix.LogUtil;
 import quickfix.Message;
 import quickfix.Session;
 import quickfix.SessionID;
 import quickfix.SystemTime;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Processes messages for all sessions in a single thread.
@@ -42,7 +45,7 @@ public class SingleThreadedEventHandlingStrategy implements EventHandlingStrateg
 
     public SingleThreadedEventHandlingStrategy(SessionConnector connector, int queueCapacity) {
         sessionConnector = connector;
-        eventQueue = new LinkedBlockingQueue<SessionMessageEvent>(queueCapacity);
+        eventQueue = new LinkedBlockingQueue<>(queueCapacity);
     }
 
     @Override
@@ -68,9 +71,9 @@ public class SingleThreadedEventHandlingStrategy implements EventHandlingStrateg
             synchronized (this) {
                 if (isStopped) {
                     if (!eventQueue.isEmpty()) {
-                        final LinkedBlockingQueue<SessionMessageEvent> tempQueue = new LinkedBlockingQueue<SessionMessageEvent>();
-                        eventQueue.drainTo(tempQueue);
-                        for (SessionMessageEvent event : tempQueue) {
+                        final List<SessionMessageEvent> tempList = new ArrayList<>();
+                        eventQueue.drainTo(tempList);
+                        for (SessionMessageEvent event : tempList) {
                             event.processMessage();
                         }
                     }
@@ -118,13 +121,10 @@ public class SingleThreadedEventHandlingStrategy implements EventHandlingStrateg
         }
 
         startHandlingMessages();
-        messageProcessingThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sessionConnector.log.info("Started " + MESSAGE_PROCESSOR_THREAD_NAME);
-                block();
-                sessionConnector.log.info("Stopped " + MESSAGE_PROCESSOR_THREAD_NAME);
-            }
+        messageProcessingThread = new Thread(() -> {
+            sessionConnector.log.info("Started " + MESSAGE_PROCESSOR_THREAD_NAME);
+            block();
+            sessionConnector.log.info("Stopped " + MESSAGE_PROCESSOR_THREAD_NAME);
         }, MESSAGE_PROCESSOR_THREAD_NAME);
         messageProcessingThread.setDaemon(true);
         messageProcessingThread.start();

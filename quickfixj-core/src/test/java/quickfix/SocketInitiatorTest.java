@@ -19,10 +19,16 @@
 
 package quickfix;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.mina.core.filterchain.IoFilterAdapter;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.write.WriteRequest;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import quickfix.mina.ProtocolFactory;
+import quickfix.mina.SingleThreadedEventHandlingStrategy;
+import quickfix.test.acceptance.ATServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,19 +39,10 @@ import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.mina.core.filterchain.IoFilterAdapter;
-import org.apache.mina.core.filterchain.IoFilterChain;
-import org.apache.mina.core.filterchain.IoFilterChainBuilder;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.core.write.WriteRequest;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import quickfix.mina.ProtocolFactory;
-import quickfix.mina.SingleThreadedEventHandlingStrategy;
-import quickfix.test.acceptance.ATServer;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class SocketInitiatorTest {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -71,11 +68,7 @@ public class SocketInitiatorTest {
             ClientApplication clientApplication = new ClientApplication();
             ThreadedSocketInitiator initiator = new ThreadedSocketInitiator(clientApplication,
                     new MemoryStoreFactory(), settings, new DefaultMessageFactory());
-            initiator.setIoFilterChainBuilder(new IoFilterChainBuilder() {
-                public void buildFilterChain(IoFilterChain chain) throws Exception {
-                    chain.addLast("TestFilter", initiatorWriteCounter);
-                }
-            });
+            initiator.setIoFilterChainBuilder(chain -> chain.addLast("TestFilter", initiatorWriteCounter));
 
             try {
                 log.info("Do first login");
@@ -263,7 +256,7 @@ public class SocketInitiatorTest {
 
     private SessionSettings getClientSessionSettings(SessionID clientSessionID) {
         SessionSettings settings = new SessionSettings();
-        HashMap<Object, Object> defaults = new HashMap<Object, Object>();
+        HashMap<Object, Object> defaults = new HashMap<>();
         defaults.put("ConnectionType", "initiator");
         defaults.put("SocketConnectProtocol", ProtocolFactory.getTypeString(ProtocolFactory.SOCKET));
         defaults.put("SocketConnectHost", "localhost");
@@ -354,11 +347,7 @@ public class SocketInitiatorTest {
         public ServerThread() {
             super("test server");
             server = new ATServer();
-            server.setIoFilterChainBuilder(new IoFilterChainBuilder() {
-                public void buildFilterChain(IoFilterChain chain) throws Exception {
-                    chain.addLast("TestFilter", writeCounter);
-                }
-            });
+            server.setIoFilterChainBuilder(chain -> chain.addLast("TestFilter", writeCounter));
         }
 
         public void run() {

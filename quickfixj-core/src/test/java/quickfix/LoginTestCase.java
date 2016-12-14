@@ -19,12 +19,12 @@
 
 package quickfix;
 
-import static org.junit.Assert.*;
-import static quickfix.FixVersions.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
+import static quickfix.FixVersions.BEGINSTRING_FIX44;
 
 public class LoginTestCase {
 
@@ -35,23 +35,20 @@ public class LoginTestCase {
     }
 
     private static void login(final String senderCompID) {
-        new Thread(new Runnable() {
+        new Thread(() -> {
+            try {
+                SessionSettings settings = createSettings(senderCompID);
+                SessionID sessionID = settings.sectionIterator().next();
+                SocketInitiator initiator = new SocketInitiator(new TestApplication(sessionID),
+                        new FileStoreFactory(settings), settings,
+                        new ScreenLogFactory(settings), new DefaultMessageFactory());
 
-            public void run() {
-                try {
-                    SessionSettings settings = createSettings(senderCompID);
-                    SessionID sessionID = settings.sectionIterator().next();
-                    SocketInitiator initiator = new SocketInitiator(new TestApplication(sessionID),
-                            new FileStoreFactory(settings), settings,
-                            new ScreenLogFactory(settings), new DefaultMessageFactory());
+                System.out.println(senderCompID + ": starting initiator");
+                initiator.start();
 
-                    System.out.println(senderCompID + ": starting initiator");
-                    initiator.start();
-
-                    new CountDownLatch(1).await();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                new CountDownLatch(1).await();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }).start();
     }
@@ -59,7 +56,7 @@ public class LoginTestCase {
     private static SessionSettings createSettings(String senderCompID) {
         SessionSettings settings = new SessionSettings();
 
-        Map<Object, Object> defaults = new HashMap<Object, Object>();
+        Map<Object, Object> defaults = new HashMap<>();
         defaults.put("FileStorePath", "target/data/banzai");
         defaults.put("ConnectionType", "initiator");
         defaults.put("TargetCompID", "EXEC");

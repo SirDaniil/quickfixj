@@ -19,24 +19,12 @@
 
 package quickfix.mina.ssl;
 
-import java.lang.reflect.Field;
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
-
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.filterchain.IoFilterChain;
-import org.apache.mina.core.filterchain.IoFilterChainBuilder;
 import org.apache.mina.core.session.IoSession;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import quickfix.ApplicationAdapter;
 import quickfix.ConfigError;
 import quickfix.DefaultMessageFactory;
@@ -53,6 +41,15 @@ import quickfix.ThreadedSocketInitiator;
 import quickfix.mina.IoSessionResponder;
 import quickfix.mina.ProtocolFactory;
 import quickfix.mina.SessionConnector;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
+import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SSLCertificateTest {
 
@@ -525,20 +522,15 @@ public class SSLCertificateTest {
 
         private SessionConnector prepareConnector(SessionSettings sessionSettings) throws ConfigError {
             SessionConnector sessionConnector = createConnector(sessionSettings);
-            sessionConnector.setIoFilterChainBuilder(new IoFilterChainBuilder() {
+            sessionConnector.setIoFilterChainBuilder(chain -> chain.addLast("SSL exception handler", new IoFilterAdapter() {
                 @Override
-                public void buildFilterChain(IoFilterChain chain) throws Exception {
-                    chain.addLast("SSL exception handler", new IoFilterAdapter() {
-                        @Override
-                        public void exceptionCaught(NextFilter nextFilter, IoSession session, Throwable cause)
-                                throws Exception {
-                            LOGGER.info("SSL exception", cause);
-                            exceptionThrownLatch.countDown();
-                            nextFilter.exceptionCaught(session, cause);
-                        }
-                    });
+                public void exceptionCaught(NextFilter nextFilter, IoSession session, Throwable cause)
+                        throws Exception {
+                    LOGGER.info("SSL exception", cause);
+                    exceptionThrownLatch.countDown();
+                    nextFilter.exceptionCaught(session, cause);
                 }
-            });
+            }));
 
             return sessionConnector;
         }
@@ -697,7 +689,7 @@ public class SSLCertificateTest {
 
     private SessionSettings createMultiSessionAcceptorSettings(String keyStoreName, boolean needClientAuth,
             String[] trustStoreNames, String cipherSuites, String protocols) {
-        HashMap<Object, Object> defaults = new HashMap<Object, Object>();
+        HashMap<Object, Object> defaults = new HashMap<>();
         defaults.put("ConnectionType", "acceptor");
         defaults.put("SocketConnectProtocol", ProtocolFactory.getTypeString(ProtocolFactory.SOCKET));
         defaults.put(SSLSupport.SETTING_USE_SSL, "Y");
@@ -738,7 +730,7 @@ public class SSLCertificateTest {
 
     private SessionSettings createAcceptorSettings(String keyStoreName, boolean needClientAuth, String trustStoreName,
             String cipherSuites, String protocols, String keyStoreType, String trustStoreType) {
-        HashMap<Object, Object> defaults = new HashMap<Object, Object>();
+        HashMap<Object, Object> defaults = new HashMap<>();
         defaults.put("ConnectionType", "acceptor");
         defaults.put("SocketConnectProtocol", ProtocolFactory.getTypeString(ProtocolFactory.SOCKET));
         defaults.put(SSLSupport.SETTING_USE_SSL, "Y");
@@ -789,7 +781,7 @@ public class SSLCertificateTest {
     private SessionSettings createInitiatorSettings(String keyStoreName, String trustStoreName, String cipherSuites,
             String protocols, String senderId, String targetId, String port, String keyStoreType,
             String trustStoreType) {
-        HashMap<Object, Object> defaults = new HashMap<Object, Object>();
+        HashMap<Object, Object> defaults = new HashMap<>();
         defaults.put("ConnectionType", "initiator");
         defaults.put("SocketConnectProtocol", ProtocolFactory.getTypeString(ProtocolFactory.SOCKET));
         defaults.put(SSLSupport.SETTING_USE_SSL, "Y");

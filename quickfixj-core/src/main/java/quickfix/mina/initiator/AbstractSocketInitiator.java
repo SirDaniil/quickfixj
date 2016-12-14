@@ -19,20 +19,10 @@
 
 package quickfix.mina.initiator;
 
-import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import quickfix.Application;
 import quickfix.ConfigError;
 import quickfix.DefaultSessionFactory;
@@ -53,13 +43,22 @@ import quickfix.mina.SessionConnector;
 import quickfix.mina.ssl.SSLConfig;
 import quickfix.mina.ssl.SSLSupport;
 
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Abstract base class for socket initiators.
  */
 public abstract class AbstractSocketInitiator extends SessionConnector implements Initiator {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    private final Set<IoSessionInitiator> initiators = new HashSet<IoSessionInitiator>();
+    private final Set<IoSessionInitiator> initiators = new HashSet<>();
 
     protected AbstractSocketInitiator(Application application,
             MessageStoreFactory messageStoreFactory, SessionSettings settings,
@@ -105,10 +104,46 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
                     sslConfig = SSLSupport.getSslConfig(getSettings(), sessionID);
                 }
 
+                String proxyUser = null;
+                String proxyPassword = null;
+                String proxyHost = null;
+
+                String proxyType = null;
+                String proxyVersion = null;
+
+                String proxyWorkstation = null;
+                String proxyDomain = null;
+
+                int proxyPort = -1;
+
+                if (getSettings().isSetting(sessionID, Initiator.SETTING_PROXY_TYPE)) {
+                    proxyType = settings.getString(sessionID, Initiator.SETTING_PROXY_TYPE);
+                    if (getSettings().isSetting(sessionID, Initiator.SETTING_PROXY_VERSION)) {
+                        proxyVersion = settings.getString(sessionID,
+                                                          Initiator.SETTING_PROXY_VERSION);
+                    }
+
+                    if (getSettings().isSetting(sessionID, Initiator.SETTING_PROXY_USER)) {
+                        proxyUser = settings.getString(sessionID, Initiator.SETTING_PROXY_USER);
+                        proxyPassword = settings.getString(sessionID,
+                                                           Initiator.SETTING_PROXY_PASSWORD);
+                    }
+                    if (getSettings().isSetting(sessionID, Initiator.SETTING_PROXY_WORKSTATION)
+                            && getSettings().isSetting(sessionID, Initiator.SETTING_PROXY_DOMAIN)) {
+                        proxyWorkstation = settings.getString(sessionID,
+                                                              Initiator.SETTING_PROXY_WORKSTATION);
+                        proxyDomain = settings.getString(sessionID, Initiator.SETTING_PROXY_DOMAIN);
+                    }
+
+                    proxyHost = settings.getString(sessionID, Initiator.SETTING_PROXY_HOST);
+                    proxyPort = (int) settings.getLong(sessionID, Initiator.SETTING_PROXY_PORT);
+                }
+
                 final IoSessionInitiator ioSessionInitiator = new IoSessionInitiator(session,
-                        socketAddresses, localAddress, reconnectingIntervals, getScheduledExecutorService(),
-                        networkingOptions, getEventHandlingStrategy(), getIoFilterChainBuilder(),
-                        sslEnabled, sslConfig);
+                        socketAddresses, localAddress, reconnectingIntervals,
+                        getScheduledExecutorService(), networkingOptions,
+                        getEventHandlingStrategy(), getIoFilterChainBuilder(), sslEnabled, sslConfig,
+                        proxyType, proxyVersion, proxyHost, proxyPort, proxyUser, proxyPassword, proxyDomain, proxyWorkstation);
 
                 initiators.add(ioSessionInitiator);
             }
@@ -146,7 +181,7 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
             continueInitOnError = settings.getBool(SessionFactory.SETTING_CONTINUE_INIT_ON_ERROR);
         }
 
-        final Map<SessionID, Session> initiatorSessions = new HashMap<SessionID, Session>();
+        final Map<SessionID, Session> initiatorSessions = new HashMap<>();
         for (final Iterator<SessionID> i = settings.sectionIterator(); i.hasNext();) {
             final SessionID sessionID = i.next();
             if (isInitiatorSession(sessionID)) {
@@ -188,7 +223,7 @@ public abstract class AbstractSocketInitiator extends SessionConnector implement
 
     private SocketAddress[] getSocketAddresses(SessionID sessionID) throws ConfigError {
         final SessionSettings settings = getSettings();
-        final ArrayList<SocketAddress> addresses = new ArrayList<SocketAddress>();
+        final ArrayList<SocketAddress> addresses = new ArrayList<>();
         for (int index = 0;; index++) {
             try {
                 final String protocolKey = Initiator.SETTING_SOCKET_CONNECT_PROTOCOL

@@ -19,13 +19,8 @@
 
 package quickfix.test.acceptance.resynch;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import quickfix.Application;
 import quickfix.DefaultMessageFactory;
 import quickfix.DoNotSend;
@@ -44,8 +39,15 @@ import quickfix.SessionID;
 import quickfix.SessionSettings;
 import quickfix.SocketAcceptor;
 import quickfix.UnsupportedMessageType;
+import quickfix.mina.SessionConnector;
 
-public class ResynchTestServer extends MessageCracker implements Application, Runnable {
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
+
+public class ResynchTestServer extends MessageCracker implements Application, Runnable, PropertyChangeListener {
 
     SocketAcceptor acceptor;
     private final Logger log = LoggerFactory.getLogger(ResynchTestServer.class);
@@ -57,43 +59,29 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
     private boolean unsynchMode = false;
     private boolean validateSequenceNumbers = true;
 
+    @Override
     public void fromAdmin(Message message, SessionID sessionId) throws FieldNotFound,
             IncorrectDataFormat, IncorrectTagValue, RejectLogon {
     }
 
+    @Override
     public void fromApp(Message message, SessionID sessionId) throws FieldNotFound,
             IncorrectDataFormat, IncorrectTagValue, UnsupportedMessageType {
         crack(message, sessionId);
     }
 
+    @Override
     public void onCreate(SessionID sessionId) {
-        if (isUnsynchMode()) {
-            // NB: there is a chance that lookupSession will fail since
-            // the sessions are kept in a ConcurrentHashMap which does not block.
-            // From JavaDoc: Retrievals reflect the results of the most recently
-            // completed update operations.
-            // For the sake of completion of the AcceptanceTests, we will try again once.
-            Session session = Session.lookupSession(sessionId);
-            if (session == null) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {}
-                session = Session.lookupSession(sessionId);
-                if (session == null) {
-                    throw new RuntimeException("Could not lookup session " + sessionId);
-                }
-            }
-            try {
-                session.setNextTargetMsgSeqNum(10);
-            } catch (IOException e) {
-                log.error(e.getMessage());
-            }
-        }
+        // There were intermittent errors when running ResynchTest
+        // that the session was not initialized in onCreate().
+        // A PropertyChangeListener has been implemented to correct this.
     }
 
+    @Override
     public void onLogon(SessionID sessionId) {
     }
 
+    @Override
     public void onLogout(SessionID sessionId) {
         shutdownLatch.countDown();
     }
@@ -106,11 +94,17 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
 
     public void stop() {
         shutdownLatch.countDown();
+        try {
+            serverThread.join();
+        } catch (InterruptedException ex) {
+            // ignore on stop
+        }
     }
 
+    @Override
     public void run() {
         try {
-            HashMap<Object, Object> defaults = new HashMap<Object, Object>();
+            HashMap<Object, Object> defaults = new HashMap<>();
             defaults.put("ConnectionType", "acceptor");
             defaults.put("SocketAcceptPort", "19889");
             defaults.put("StartTime", "00:00:00");
@@ -131,8 +125,10 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
 
             acceptor = new SocketAcceptor(this, factory, settings, new ScreenLogFactory(settings),
                     new DefaultMessageFactory());
+            acceptor.addPropertyChangeListener(this);
             acceptor.start();
 
+            // XXX wait some time?
             try {
                 //acceptor.waitForInitialization();
                 initializationLatch.countDown();
@@ -144,6 +140,7 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
 
                 log.info("ResynchTestServer shutting down.");
             } finally {
+//                acceptor.stop(true);
                 acceptor.stop();
             }
         } catch (Throwable e) {
@@ -151,9 +148,11 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
         }
     }
 
+    @Override
     public void toAdmin(Message message, SessionID sessionId) {
     }
 
+    @Override
     public void toApp(Message message, SessionID sessionId) throws DoNotSend {
     }
 
@@ -180,5 +179,36 @@ public class ResynchTestServer extends MessageCracker implements Application, Ru
 
     public boolean isUnsynchMode() {
         return unsynchMode;
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals(SessionConnector.SESSIONS_PROPERTY)) {
+            SessionID sessionId = new SessionID(FixVersions.BEGINSTRING_FIX44, "ISLD", "TW");
+            if (isUnsynchMode()) {
+                // NB: there is a chance that lookupSession will fail since
+                // the sessions are kept in a ConcurrentHashMap which does not block.
+                // From JavaDoc: Retrievals reflect the results of the most recently
+                // completed update operations.
+                // For the sake of completion of the AcceptanceTests, we will try again once.
+                Session session = Session.lookupSession(sessionId);
+                if (session == null) {
+                    log.error("Session was NULL!");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                    session = Session.lookupSession(sessionId);
+                    if (session == null) {
+                        throw new RuntimeException("Could not lookup session " + sessionId);
+                    }
+                }
+                try {
+                    session.setNextTargetMsgSeqNum(10);
+                } catch (IOException e) {
+                    log.error(e.getMessage());
+                }
+            }
+        }
     }
 }

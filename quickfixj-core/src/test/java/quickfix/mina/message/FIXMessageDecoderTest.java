@@ -19,19 +19,6 @@
 
 package quickfix.mina.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolDecoder;
@@ -42,12 +29,24 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.quickfixj.CharsetSupport;
-
 import quickfix.DataDictionaryTest;
 import quickfix.InvalidMessage;
 import quickfix.Message;
 import quickfix.field.Headline;
 import quickfix.mina.CriticalProtocolCodecException;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class FIXMessageDecoderTest {
     private FIXMessageDecoder decoder;
@@ -277,12 +276,8 @@ public class FIXMessageDecoderTest {
         File testFile = setUpTestFile();
 
         FIXMessageDecoder decoder = new FIXMessageDecoder();
-        final List<String> messages = new ArrayList<String>();
-        decoder.extractMessages(testFile, new FIXMessageDecoder.MessageListener() {
-            public void onMessage(String message) {
-                messages.add(message);
-            }
-        });
+        final List<String> messages = new ArrayList<>();
+        decoder.extractMessages(testFile, messages::add);
         assertCorrectlyExtractedMessages(messages);
     }
 
@@ -481,4 +476,17 @@ public class FIXMessageDecoderTest {
         Assert.assertTrue("There should be no header detected", bufPos == -1);
     }
 
+    
+    @Test(timeout = 1000)
+    // QFJ-903
+    public void testBadBodyLength() throws Exception {
+
+        String message = "8=FIX.4.4\u00019=A\u000135=D\u000149=ST\u000156=TS\u000134=3\u000152=20160830-14:21:45.472\u000111=Order32\u00011=Template1\u000121=1\u000155=VOD.L\u000148=VOD.L\u000122=5\u0001167=CS\u0001207=LSE\u000154=1\u000160=20160830-14:21:45.472\u000138=100\u000140=2\u000144=95\u000115=GBp\u000159=0\u000158=Staging\u000110=206\u0001";
+        message = message + "8=FIX.4.4\u00019=A\u000135=D\u000149=ST\u000156=TS\u000134=3\u000152=20160830-14:21:45.472\u000111=Order32\u00011=Template1\u000121=1\u000155=VOD.L\u000148=VOD.L\u000122=5\u0001167=CS\u0001207=LSE\u000154=1\u000160=20160830-14:21:45.472\u000138=100\u000140=2\u000144=95\u000115=GBp\u000159=0\u000158=Staging\u000110=206\u0001";
+        String goodMessage = "8=FIX.4.2\u00019=12\u000135=Y\u0001108=30\u000110=037\u0001";
+        message = message + goodMessage;
+
+        setUpBuffer(message);
+        assertMessageFound(goodMessage);
+    }
 }

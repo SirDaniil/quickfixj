@@ -19,24 +19,33 @@
 
 package quickfix.field.converter;
 
+import org.quickfixj.SimpleCache;
+import quickfix.FieldConvertError;
+import quickfix.SystemTime;
+
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.concurrent.*;
-
-import quickfix.FieldConvertError;
-import quickfix.SystemTime;
 
 /**
  * Convert between a timestamp and a String. A timestamp includes both a date
  * and a time.
  */
 public class UtcTimestampConverter extends AbstractDateTimeConverter {
-    private static final ThreadLocal<UtcTimestampConverter> utcTimestampConverter = new ThreadLocal<UtcTimestampConverter>();
+    private static final ThreadLocal<UtcTimestampConverter> utcTimestampConverter = new ThreadLocal<>();
+    private final static SimpleCache<String, Long> dateCache = new SimpleCache<>(dateString -> {
+        final Calendar c = new GregorianCalendar(1970, 0, 1, 0, 0, 0);
+        c.setTimeZone(SystemTime.UTC_TIMEZONE);
+        final int year = Integer.parseInt(dateString.substring(0, 4));
+        final int month = Integer.parseInt(dateString.substring(4, 6));
+        final int day = Integer.parseInt(dateString.substring(6, 8));
+        c.set(year, month - 1, day);
+        return c.getTimeInMillis();
+    });
+
     private final DateFormat utcTimestampFormat = createDateFormat("yyyyMMdd-HH:mm:ss");
     private final DateFormat utcTimestampFormatMillis = createDateFormat("yyyyMMdd-HH:mm:ss.SSS");
-    private final static ConcurrentHashMap<String, Long> dateCache = new ConcurrentHashMap<String, Long>();
 
     /**
      * Convert a timestamp (represented as a Date) to a String.
@@ -83,19 +92,7 @@ public class UtcTimestampConverter extends AbstractDateTimeConverter {
     }
 
     private static Long getMillisForDay(String value) {
-        String dateString = value.substring(0, 8);
-        Long millis = dateCache.get(dateString);
-        if (millis == null) {
-            Calendar c = new GregorianCalendar(1970, 0, 1, 0, 0, 0);
-            c.setTimeZone(SystemTime.UTC_TIMEZONE);
-            int year = Integer.parseInt(value.substring(0, 4));
-            int month = Integer.parseInt(value.substring(4, 6));
-            int day = Integer.parseInt(value.substring(6, 8));
-            c.set(year, month - 1, day);
-            millis = c.getTimeInMillis();
-            dateCache.put(dateString, c.getTimeInMillis());
-        }
-        return millis;
+        return dateCache.computeIfAbsent(value.substring(0, 8));
     }
 
     private static void verifyFormat(String value) throws FieldConvertError {

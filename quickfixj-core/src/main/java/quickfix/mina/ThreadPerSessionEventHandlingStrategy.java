@@ -1,4 +1,5 @@
-/*******************************************************************************
+/*
+ ******************************************************************************
  * Copyright (c) quickfixengine.org  All rights reserved.
  *
  * This file is part of the QuickFIX FIX Engine
@@ -19,26 +20,27 @@
 
 package quickfix.mina;
 
+import quickfix.LogUtil;
+import quickfix.Message;
+import quickfix.Session;
+import quickfix.SessionID;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import quickfix.LogUtil;
-import quickfix.Message;
-import quickfix.Session;
-import quickfix.SessionID;
-import static quickfix.mina.EventHandlingStrategy.END_OF_STREAM;
-
 /**
  * Processes messages in a session-specific thread.
  */
 public class ThreadPerSessionEventHandlingStrategy implements EventHandlingStrategy {
 
-    private final ConcurrentMap<SessionID, MessageDispatchingThread> dispatchers = new ConcurrentHashMap<SessionID, MessageDispatchingThread>();
+    private final ConcurrentMap<SessionID, MessageDispatchingThread> dispatchers = new ConcurrentHashMap<>();
     private final SessionConnector sessionConnector;
     private final int queueCapacity;
 
@@ -51,12 +53,11 @@ public class ThreadPerSessionEventHandlingStrategy implements EventHandlingStrat
     public void onMessage(Session quickfixSession, Message message) {
         MessageDispatchingThread dispatcher = dispatchers.get(quickfixSession.getSessionID());
         if (dispatcher == null) {
-            final MessageDispatchingThread temp = new MessageDispatchingThread(quickfixSession, queueCapacity);
-            dispatcher = dispatchers.putIfAbsent(quickfixSession.getSessionID(), temp);
-            if (dispatcher == null) {
-                dispatcher = temp;
-            }
-            startDispatcherThread(dispatcher);
+            dispatcher = dispatchers.computeIfAbsent(quickfixSession.getSessionID(), sessionID -> {
+               final MessageDispatchingThread newDispatcher = new MessageDispatchingThread(quickfixSession, queueCapacity);
+                startDispatcherThread(newDispatcher);
+                return newDispatcher;
+            });
         }
         if (message != null) {
             dispatcher.enqueue(message);
@@ -112,7 +113,7 @@ public class ThreadPerSessionEventHandlingStrategy implements EventHandlingStrat
         private MessageDispatchingThread(Session session, int queueCapacity) {
             super("QF/J Session dispatcher: " + session.getSessionID());
             quickfixSession = session;
-            messages = new LinkedBlockingQueue<Message>(queueCapacity);
+            messages = new LinkedBlockingQueue<>(queueCapacity);
         }
 
         public void enqueue(Message message) {
@@ -153,9 +154,9 @@ public class ThreadPerSessionEventHandlingStrategy implements EventHandlingStrat
                 }
             }
             if (!messages.isEmpty()) {
-                final LinkedBlockingQueue<Message> tempQueue = new LinkedBlockingQueue<Message>();
-                messages.drainTo(tempQueue);
-                for (Message message : tempQueue) {
+                final List<Message> tempList = new ArrayList<>();
+                messages.drainTo(tempList);
+                for (Message message : tempList) {
                     try {
                         quickfixSession.next(message);
                     } catch (final Throwable e) {

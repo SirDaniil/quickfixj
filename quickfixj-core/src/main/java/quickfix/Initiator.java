@@ -30,12 +30,12 @@ public interface Initiator extends Connector {
      *
      * @see quickfix.SessionFactory#SETTING_CONNECTION_TYPE
      */
-    public static final String SETTING_RECONNECT_INTERVAL = "ReconnectInterval";
+    String SETTING_RECONNECT_INTERVAL = "ReconnectInterval";
 
     /**
      * Initiator setting for connection protocol (defaults to "tcp").
      */
-    public static final String SETTING_SOCKET_CONNECT_PROTOCOL = "SocketConnectProtocol";
+    String SETTING_SOCKET_CONNECT_PROTOCOL = "SocketConnectProtocol";
 
     /**
      * Initiator setting for connection host. Only valid when session connection
@@ -43,7 +43,7 @@ public interface Initiator extends Connector {
      *
      * @see quickfix.SessionFactory#SETTING_CONNECTION_TYPE
      */
-    public static final String SETTING_SOCKET_CONNECT_HOST = "SocketConnectHost";
+    String SETTING_SOCKET_CONNECT_HOST = "SocketConnectHost";
 
     /**
      * Initiator setting for connection port. Only valid when session connection
@@ -51,7 +51,7 @@ public interface Initiator extends Connector {
      *
      * @see quickfix.SessionFactory#SETTING_CONNECTION_TYPE
      */
-    public static final String SETTING_SOCKET_CONNECT_PORT = "SocketConnectPort";
+    String SETTING_SOCKET_CONNECT_PORT = "SocketConnectPort";
 
     /**
      * Initiator setting for local/bind host. Only valid when session connection
@@ -59,7 +59,7 @@ public interface Initiator extends Connector {
      *
      * @see quickfix.SessionFactory#SETTING_CONNECTION_TYPE
      */
-    public static final String SETTING_SOCKET_LOCAL_HOST = "SocketLocalHost";
+    String SETTING_SOCKET_LOCAL_HOST = "SocketLocalHost";
 
     /**
      * Initiator setting for local/bind port. Only valid when session connection
@@ -67,5 +67,53 @@ public interface Initiator extends Connector {
      *
      * @see quickfix.SessionFactory#SETTING_CONNECTION_TYPE
      */
-    public static final String SETTING_SOCKET_LOCAL_PORT = "SocketLocalPort";
+    String SETTING_SOCKET_LOCAL_PORT = "SocketLocalPort";
+
+    /**
+     * Initiator setting for proxy type. Only valid when session connection
+     * type is "initiator".
+     */
+   String SETTING_PROXY_TYPE = "ProxyType";
+    
+    /**
+     * Initiator setting for proxy version. Only valid when session connection
+     * type is "initiator".  - http 1.0 / 1.1
+     */
+    String SETTING_PROXY_VERSION = "ProxyVersion";
+
+    /**
+     * Initiator setting for proxy host. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_HOST = "ProxyHost";
+    
+    /**
+     * Initiator setting for proxy port. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_PORT = "ProxyPort";
+    
+    /**
+     * Initiator setting for proxy port. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_USER = "ProxyUser";
+    
+    /**
+     * Initiator setting for proxy port. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_PASSWORD = "ProxyPassword";
+
+    /**
+     * Initiator setting for proxy domain. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_DOMAIN = "ProxyDomain";
+
+    /**
+     * Initiator setting for proxy workstation. Only valid when session connection
+     * type is "initiator".
+     */
+    String SETTING_PROXY_WORKSTATION = "ProxyWorkstation";
 }

@@ -19,6 +19,18 @@
 
 package quickfix.mina.message;
 
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.filterchain.IoFilter;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.codec.ProtocolCodecException;
+import org.apache.mina.filter.codec.ProtocolDecoderOutput;
+import org.apache.mina.filter.codec.demux.MessageDecoder;
+import org.apache.mina.filter.codec.demux.MessageDecoderResult;
+import org.quickfixj.CharsetSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import quickfix.mina.CriticalProtocolCodecException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -27,19 +39,6 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.core.filterchain.IoFilter;
-import org.apache.mina.filter.codec.ProtocolCodecException;
-import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-import org.apache.mina.filter.codec.demux.MessageDecoder;
-import org.apache.mina.filter.codec.demux.MessageDecoderResult;
-import org.quickfixj.CharsetSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import quickfix.mina.CriticalProtocolCodecException;
 
 /**
  * Detects and decodes FIX message strings in an incoming data stream. The
@@ -152,9 +151,16 @@ public class FIXMessageDecoder implements MessageDecoder {
                     while (position < in.limit()) { // while data remains
                         ch = in.get(position++);
                         if (ch < '0' || ch > '9') { // if not digit
+                            if (bodyLength == 0) { // QFJ-903 - we started to parse length but encountered no digit
+                                handleError(in, in.position() + 1, "Encountered invalid body length: " + (char)ch,
+                                        false);
+                            }
                             break;
                         }
                         bodyLength = bodyLength * 10 + (ch - '0');
+                    }
+                    if (state == SEEKING_HEADER ) {
+                        continue;
                     }
                     if (ch == SOH) {
                         state = READING_BODY;
@@ -164,8 +170,8 @@ public class FIXMessageDecoder implements MessageDecoder {
                     } else {
                         if (position < in.limit()) { // if data remains
                             String messageString = getMessageStringForError(in);
-                            handleError(in, in.position() + 1, "Length format error in message (last character:" + ch + "): " + messageString,
-                                    false);
+                            handleError(in, in.position() + 1, "Length format error in message (last character: " + (char)ch + "): " + messageString,
+                                false);
                             continue;
                         } else {
                             break;
@@ -295,13 +301,8 @@ public class FIXMessageDecoder implements MessageDecoder {
      *      quickfix.mina.message.FIXMessageDecoder.MessageListener)
      */
     public List<String> extractMessages(File file) throws IOException, ProtocolCodecException {
-        final List<String> messages = new ArrayList<String>();
-        extractMessages(file, new MessageListener() {
-            @Override
-            public void onMessage(String message) {
-                messages.add(message);
-            }
-        });
+        final List<String> messages = new ArrayList<>();
+        extractMessages(file, messages::add);
         return messages;
     }
 
@@ -319,8 +320,7 @@ public class FIXMessageDecoder implements MessageDecoder {
     public void extractMessages(File file, final MessageListener listener) throws IOException,
             ProtocolCodecException {
         // Set up a read-only memory-mapped file
-        RandomAccessFile fileIn = new RandomAccessFile(file, "r");
-        try {
+        try (RandomAccessFile fileIn = new RandomAccessFile(file, "r")) {
             FileChannel readOnlyChannel = fileIn.getChannel();
             MappedByteBuffer memoryMappedBuffer = readOnlyChannel.map(FileChannel.MapMode.READ_ONLY, 0,
                     (int) readOnlyChannel.size());
@@ -329,13 +329,12 @@ public class FIXMessageDecoder implements MessageDecoder {
                 public void write(Object message) {
                     listener.onMessage((String) message);
                 }
+
                 @Override
                 public void flush(IoFilter.NextFilter nextFilter, IoSession ioSession) {
                     // ignored
                 }
             });
-        } finally {
-            fileIn.close();
         }
     }
 
