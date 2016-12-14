@@ -276,7 +276,7 @@
 	<distributionManagement>
         <repository>
             <id>dropbox</id>
-            <url>file:////cvs/eod/maven</url>
+            <url>file:////riteaid/eod/maven</url>
         </repository>
 		<!--<snapshotRepository>
 			<id>ossrh</id>
