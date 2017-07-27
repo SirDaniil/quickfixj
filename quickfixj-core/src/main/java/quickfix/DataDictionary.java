@@ -243,12 +243,7 @@ public class DataDictionary {
     }
 
     private void addMsgField(String msgType, int field) {
-        Set<Integer> fields = messageFields.get(msgType);
-        if (fields == null) {
-            fields = new HashSet<>();
-            messageFields.put(msgType, fields);
-        }
-        fields.add(field);
+        messageFields.computeIfAbsent(msgType, k -> new HashSet<>()).add(field);
     }
 
     /**
@@ -299,12 +294,7 @@ public class DataDictionary {
     }
 
     private void addRequiredField(String msgType, int field) {
-        Set<Integer> fields = requiredFields.get(msgType);
-        if (fields == null) {
-            fields = new HashSet<>();
-            requiredFields.put(msgType, fields);
-        }
-        fields.add(field);
+        requiredFields.computeIfAbsent(msgType, k -> new HashSet<>()).add(field);
     }
 
     /**
@@ -340,12 +330,7 @@ public class DataDictionary {
     }
 
     private void addFieldValue(int field, String value) {
-        Set<String> values = fieldValues.get(field);
-        if (values == null) {
-            values = new HashSet<>();
-            fieldValues.put(field, values);
-        }
-        values.add(value);
+        fieldValues.computeIfAbsent(field, k -> new HashSet<>()).add(value);
     }
 
     /**
@@ -518,11 +503,6 @@ public class DataDictionary {
     private void copyFrom(DataDictionary rhs) {
         hasVersion = rhs.hasVersion;
         beginString = rhs.beginString;
-        checkFieldsOutOfOrder = rhs.checkFieldsOutOfOrder;
-        checkFieldsHaveValues = rhs.checkFieldsHaveValues;
-        checkUserDefinedFields = rhs.checkUserDefinedFields;
-        checkUnorderedGroupFields = rhs.checkUnorderedGroupFields;
-        allowUnknownMessageFields = rhs.allowUnknownMessageFields;
 
         copyMap(messageFields, rhs.messageFields);
         copyMap(requiredFields, rhs.requiredFields);
@@ -533,8 +513,14 @@ public class DataDictionary {
         copyMap(fieldNames, rhs.fieldNames);
         copyMap(names, rhs.names);
         copyMap(valueNames, rhs.valueNames);
-        copyMap(groups, rhs.groups);
+        copyGroups(groups, rhs.groups);
         copyMap(components, rhs.components);
+
+        setCheckFieldsOutOfOrder(rhs.checkFieldsOutOfOrder);
+        setCheckFieldsHaveValues(rhs.checkFieldsHaveValues);
+        setCheckUserDefinedFields(rhs.checkUserDefinedFields);
+        setCheckUnorderedGroupFields(rhs.checkUnorderedGroupFields);
+        setAllowUnknownMessageFields(rhs.allowUnknownMessageFields);
     }
 
     @SuppressWarnings("unchecked")
@@ -558,13 +544,26 @@ public class DataDictionary {
         }
     }
 
+    /** copy groups including their data dictionaries and validation settings
+     * 
+     * @param lhs target
+     * @param rhs source
+     */
+    private static void copyGroups(Map<IntStringPair, GroupInfo> lhs, Map<IntStringPair, GroupInfo> rhs) {
+        lhs.clear();
+        for (Map.Entry<IntStringPair, GroupInfo> entry : rhs.entrySet()) {
+            GroupInfo value = new GroupInfo(entry.getValue().getDelimiterField(), new DataDictionary(entry.getValue().getDataDictionary()));
+            lhs.put(entry.getKey(), value);
+        }
+    }
+
     private static <V> void copyCollection(Collection<V> lhs, Collection<V> rhs) {
         lhs.clear();
         lhs.addAll(rhs);
     }
 
     /**
-     * Validate a mesasge, including the header and trailer fields.
+     * Validate a message, including the header and trailer fields.
      *
      * @param message the message
      * @throws IncorrectTagValue if a field value is not valid
@@ -674,21 +673,25 @@ public class DataDictionary {
     void checkField(Field<?> field, String msgType, boolean message) {
         // use different validation for groups and messages
         boolean messageField = message ? isMsgField(msgType, field.getField()) : fields.contains(field.getField());
-        boolean fail;
-
-        if (field.getField() < USER_DEFINED_TAG_MIN) {
-            fail = !messageField && !allowUnknownMessageFields;
-        } else {
-            fail = !messageField && checkUserDefinedFields;
-        }
+        boolean fail = checkFieldFailure(field.getField(), messageField);
 
         if (fail) {
-            if (fields.contains(field.getTag())) {
+            if (fields.contains(field.getField())) {
                 throw new FieldException(SessionRejectReason.TAG_NOT_DEFINED_FOR_THIS_MESSAGE_TYPE, field.getField());
             } else {
                 throw new FieldException(SessionRejectReason.INVALID_TAG_NUMBER, field.getField());
             }
         }
+    }
+
+    boolean checkFieldFailure(int field, boolean messageField) {
+        boolean fail;
+        if (field < USER_DEFINED_TAG_MIN) {
+            fail = !messageField && !allowUnknownMessageFields;
+        } else {
+            fail = !messageField && checkUserDefinedFields;
+        }
+        return fail;
     }
 
     private void checkValidFormat(StringField field) throws IncorrectDataFormat {

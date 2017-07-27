@@ -19,6 +19,10 @@
 
 package quickfix;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoField;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -211,6 +215,102 @@ public class FieldConvertersTest extends TestCase {
         } catch (FieldConvertError e) {
             // expected
         }
+
+        // just accept up to picoseconds but truncate after millis
+        date = UtcTimestampConverter.convert("20120922-12:34:56.123456");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(34, c.get(Calendar.MINUTE));
+        assertEquals(56, c.get(Calendar.SECOND));
+        assertEquals(2012, c.get(Calendar.YEAR));
+        assertEquals(Calendar.SEPTEMBER, c.get(Calendar.MONTH));
+        assertEquals(22, c.get(Calendar.DAY_OF_MONTH));
+        assertEquals(123, c.get(Calendar.MILLISECOND));
+
+        date = UtcTimestampConverter.convert("20120922-12:34:56.123456789");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(34, c.get(Calendar.MINUTE));
+        assertEquals(56, c.get(Calendar.SECOND));
+        assertEquals(2012, c.get(Calendar.YEAR));
+        assertEquals(Calendar.SEPTEMBER, c.get(Calendar.MONTH));
+        assertEquals(22, c.get(Calendar.DAY_OF_MONTH));
+        assertEquals(123, c.get(Calendar.MILLISECOND));
+
+        date = UtcTimestampConverter.convert("20120922-12:34:56.123456789123");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(34, c.get(Calendar.MINUTE));
+        assertEquals(56, c.get(Calendar.SECOND));
+        assertEquals(2012, c.get(Calendar.YEAR));
+        assertEquals(Calendar.SEPTEMBER, c.get(Calendar.MONTH));
+        assertEquals(22, c.get(Calendar.DAY_OF_MONTH));
+        assertEquals(123, c.get(Calendar.MILLISECOND));
+
+        try {
+            UtcTimestampConverter.convert("20120922-12:34:56.12345");
+            fail();
+        } catch (FieldConvertError e) {
+            // expected
+        }
+        try {
+            UtcTimestampConverter.convert("20120922-12:34:56.1234567");
+            fail();
+        } catch (FieldConvertError e) {
+            // expected
+        }
+        
+        LocalDateTime dateTime = UtcTimestampConverter.convertToLocalDateTime("20120922-12:34:56");
+        assertEquals(12, dateTime.getHour());
+        assertEquals(34, dateTime.getMinute());
+        assertEquals(56, dateTime.getSecond());
+        assertEquals(2012, dateTime.getYear());
+        assertEquals(9, dateTime.getMonthValue());
+        assertEquals(22, dateTime.getDayOfMonth());
+        assertEquals(0, dateTime.getLong(ChronoField.MILLI_OF_SECOND));
+        assertEquals(0, dateTime.getLong(ChronoField.MICRO_OF_SECOND));
+        assertEquals(0, dateTime.getNano());
+        
+        dateTime = UtcTimestampConverter.convertToLocalDateTime("20120922-12:34:56.123456789111");
+        assertEquals(12, dateTime.getHour());
+        assertEquals(34, dateTime.getMinute());
+        assertEquals(56, dateTime.getSecond());
+        assertEquals(2012, dateTime.getYear());
+        assertEquals(9, dateTime.getMonthValue());
+        assertEquals(22, dateTime.getDayOfMonth());
+        assertEquals(123, dateTime.getLong(ChronoField.MILLI_OF_SECOND));
+        assertEquals(123456, dateTime.getLong(ChronoField.MICRO_OF_SECOND));
+        assertEquals(123456789, dateTime.getNano());
+
+        dateTime = UtcTimestampConverter.convertToLocalDateTime("20120922-12:34:56.123456789");
+        assertEquals(12, dateTime.getHour());
+        assertEquals(34, dateTime.getMinute());
+        assertEquals(56, dateTime.getSecond());
+        assertEquals(2012, dateTime.getYear());
+        assertEquals(9, dateTime.getMonthValue());
+        assertEquals(22, dateTime.getDayOfMonth());
+        assertEquals(123, dateTime.getLong(ChronoField.MILLI_OF_SECOND));
+        assertEquals(123456, dateTime.getLong(ChronoField.MICRO_OF_SECOND));
+        assertEquals(123456789, dateTime.getNano());
+
+        dateTime = UtcTimestampConverter.convertToLocalDateTime("20120922-12:34:56.123456");
+        assertEquals(12, dateTime.getHour());
+        assertEquals(34, dateTime.getMinute());
+        assertEquals(56, dateTime.getSecond());
+        assertEquals(2012, dateTime.getYear());
+        assertEquals(9, dateTime.getMonthValue());
+        assertEquals(22, dateTime.getDayOfMonth());
+        assertEquals(123, dateTime.getLong(ChronoField.MILLI_OF_SECOND));
+        assertEquals(123456, dateTime.getLong(ChronoField.MICRO_OF_SECOND));
+        assertEquals(123456000, dateTime.getNano());
+
+        assertEquals("2012-09-22T12:34:56", UtcTimestampConverter.convertToLocalDateTime("20120922-12:34:56").toString());
+        
+        assertEquals("20120922-12:34:56", UtcTimestampConverter.convert(dateTime, UtcTimestampPrecision.SECONDS));
+        assertEquals("20120922-12:34:56.123", UtcTimestampConverter.convert(dateTime, UtcTimestampPrecision.MILLIS));
+        assertEquals("20120922-12:34:56.123456", UtcTimestampConverter.convert(dateTime, UtcTimestampPrecision.MICROS));
+        assertEquals("20120922-12:34:56.123456000", UtcTimestampConverter.convert(dateTime, UtcTimestampPrecision.NANOS));
+
     }
 
     public void testUtcTimeOnlyConversion() throws Exception {
@@ -237,6 +337,65 @@ public class FieldConvertersTest extends TestCase {
         } catch (FieldConvertError e) {
             // expected
         }
+        
+        date = UtcTimeOnlyConverter.convert("12:05:06.555444");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(5, c.get(Calendar.MINUTE));
+        assertEquals(6, c.get(Calendar.SECOND));
+        assertEquals(555, c.get(Calendar.MILLISECOND));
+        assertEquals(1970, c.get(Calendar.YEAR));
+        assertEquals(0, c.get(Calendar.MONTH));
+        assertEquals(1, c.get(Calendar.DAY_OF_MONTH));
+        
+        date = UtcTimeOnlyConverter.convert("12:05:06.555444333");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(5, c.get(Calendar.MINUTE));
+        assertEquals(6, c.get(Calendar.SECOND));
+        assertEquals(555, c.get(Calendar.MILLISECOND));
+        assertEquals(1970, c.get(Calendar.YEAR));
+        assertEquals(0, c.get(Calendar.MONTH));
+        assertEquals(1, c.get(Calendar.DAY_OF_MONTH));
+
+        date = UtcTimeOnlyConverter.convert("12:05:06.555444333222");
+        c.setTime(date);
+        assertEquals(12, c.get(Calendar.HOUR_OF_DAY));
+        assertEquals(5, c.get(Calendar.MINUTE));
+        assertEquals(6, c.get(Calendar.SECOND));
+        assertEquals(555, c.get(Calendar.MILLISECOND));
+        assertEquals(1970, c.get(Calendar.YEAR));
+        assertEquals(0, c.get(Calendar.MONTH));
+        assertEquals(1, c.get(Calendar.DAY_OF_MONTH));
+
+        UtcTimeOnlyConverter.convert("12:05:06");
+
+        try {
+            UtcTimeOnlyConverter.convert("12:05:06.55544");
+            fail();
+        } catch (FieldConvertError e) {
+            // expected
+        }
+        try {
+            UtcTimeOnlyConverter.convert("12:05:06.55544433");
+            fail();
+        } catch (FieldConvertError e) {
+            // expected
+        }
+        
+        LocalTime time = UtcTimeOnlyConverter.convertToLocalTime("12:05:06.555444333222");
+        assertEquals(12, time.getHour());
+        assertEquals(5, time.getMinute());
+        assertEquals(6, time.getSecond());
+        assertEquals(555, time.getLong(ChronoField.MILLI_OF_SECOND));
+        assertEquals(555444, time.getLong(ChronoField.MICRO_OF_SECOND));
+        assertEquals(555444333, time.getNano());
+
+        assertEquals("12:05:06", UtcTimeOnlyConverter.convert(time, UtcTimestampPrecision.SECONDS));
+        assertEquals("12:05:06.555", UtcTimeOnlyConverter.convert(time, UtcTimestampPrecision.MILLIS));
+        assertEquals("12:05:06.555444", UtcTimeOnlyConverter.convert(time, UtcTimestampPrecision.MICROS));
+        assertEquals("12:05:06.555444333", UtcTimeOnlyConverter.convert(time, UtcTimestampPrecision.NANOS));
+        
     }
 
     public void testUtcDateOnlyConversion() throws Exception {
@@ -284,18 +443,15 @@ public class FieldConvertersTest extends TestCase {
         } catch (FieldConvertError e) {
             // expected
         }
+        
+        LocalDate localDate = UtcDateOnlyConverter.convertToLocalDate("20120922");
+        assertEquals(2012, localDate.getYear());
+        assertEquals(9, localDate.getMonthValue());
+        assertEquals(22, localDate.getDayOfMonth());
+        
+        LocalDate localDate2 = LocalDate.of(2012, 9, 20);
+        assertEquals("20120920", UtcDateOnlyConverter.convert(localDate2));
+        
     }
 
-    //    void FieldConvertorsTestCase::checkSumConvertTo::onRun( void*& )
-    //    {
-    //      assert( CheckSumConvertor::convert( 0 ) == "000" );
-    //      assert( CheckSumConvertor::convert( 5 ) == "005" );
-    //      assert( CheckSumConvertor::convert( 12 ) == "012" );
-    //      assert( CheckSumConvertor::convert( 234 ) == "234" );
-    //
-    //      try{ CheckSumConvertor::convert( -1 ); assert( false ); }
-    //      catch ( FieldConvertError& ) {}
-    //      try{ CheckSumConvertor::convert( 256 ); assert( false ); }
-    //      catch ( FieldConvertError& ) {}}
-    //    }
 }

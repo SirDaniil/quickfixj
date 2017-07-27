@@ -19,9 +19,11 @@
 
 package quickfix;
 
+import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import quickfix.field.MsgType;
 import quickfix.mina.ProtocolFactory;
 import quickfix.mina.SingleThreadedEventHandlingStrategy;
 
@@ -31,12 +33,9 @@ import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * QFJ-643: Unable to restart a stopped acceptor (SocketAcceptor)
@@ -51,6 +50,15 @@ public class SocketAcceptorTest {
             "ACCEPTOR", "INITIATOR");
     private final SessionID initiatorSessionID = new SessionID(FixVersions.BEGINSTRING_FIX42,
             "INITIATOR", "ACCEPTOR");
+
+    @After
+    public void cleanup() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(SocketAcceptorTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     @Test
     public void testRestartOfAcceptor() throws Exception {
@@ -80,19 +88,19 @@ public class SocketAcceptorTest {
         } finally {
             if (initiator != null) {
                 try {
-                    initiator.stop(true);
+                    initiator.stop();
                 } catch (RuntimeException e) {
                     log.error(e.getMessage(), e);
                 }
             }
             if (acceptor != null) {
                 try {
-                    acceptor.stop(true);
+                    acceptor.stop();
                 } catch (RuntimeException e) {
                     log.error(e.getMessage(), e);
                 }
             }
-            Thread.sleep(500);
+            assertEquals("application should receive logout", 1, testAcceptorApplication.logoutCounter);
         }
     }
 
@@ -156,11 +164,13 @@ public class SocketAcceptorTest {
     private static class TestAcceptorApplication extends ApplicationAdapter {
 
         private final CountDownLatch logonLatch;
+        public volatile int logoutCounter = 0;
 
         public TestAcceptorApplication() {
             logonLatch = new CountDownLatch(1);
         }
 
+        @Override
         public void onLogon(SessionID sessionId) {
             super.onLogon(sessionId);
             logonLatch.countDown();
@@ -168,9 +178,20 @@ public class SocketAcceptorTest {
 
         public void waitForLogon() {
             try {
-                logonLatch.await(10, TimeUnit.SECONDS);
+                assertTrue("Logon timed out", logonLatch.await(10, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 fail(e.getMessage());
+            }
+        }
+        
+        @Override
+        public void fromAdmin(Message message, SessionID sessionId) throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, RejectLogon {
+            try {
+                if (MsgType.LOGOUT.equals(MessageUtils.getMessageType(message.toString()))) {
+                    logoutCounter++;
+                }
+            } catch (InvalidMessage ex) {
+                // ignore
             }
         }
     }
@@ -189,7 +210,7 @@ public class SocketAcceptorTest {
         settings.set(defaults);
 
         MessageStoreFactory factory = new MemoryStoreFactory();
-        quickfix.LogFactory logFactory = new ScreenLogFactory(true, true, true);
+        quickfix.LogFactory logFactory = new SLF4JLogFactory(new SessionSettings());
         return new SocketAcceptor(testAcceptorApplication, factory, settings, logFactory,
                 new DefaultMessageFactory());
     }
@@ -211,7 +232,7 @@ public class SocketAcceptorTest {
         settings.set(defaults);
 
         MessageStoreFactory factory = new MemoryStoreFactory();
-        quickfix.LogFactory logFactory = new ScreenLogFactory(true, true, true);
+        quickfix.LogFactory logFactory = new SLF4JLogFactory(new SessionSettings());
         return new SocketInitiator(new ApplicationAdapter() {
         }, factory, settings, logFactory, new DefaultMessageFactory());
     }

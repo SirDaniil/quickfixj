@@ -15,12 +15,8 @@ import quickfix.fix44.TestRequest;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.util.Date;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -57,7 +53,7 @@ public class SessionResetTest {
         header.setString(SenderCompID.FIELD, sessionID.getSenderCompID());
         header.setString(TargetCompID.FIELD, sessionID.getTargetCompID());
         header.setInt(MsgSeqNum.FIELD, 1);
-        header.setUtcTimeStamp(SendingTime.FIELD, SystemTime.getDate(), true);
+        header.setUtcTimeStamp(SendingTime.FIELD, SystemTime.getLocalDateTime(), true);
 
         Thread resetThread = new Thread(() -> {
             try {
@@ -66,12 +62,14 @@ public class SessionResetTest {
                 e.printStackTrace();
             }
         }, "SessionReset");
+        resetThread.setDaemon(true);
 
         Thread messageSender = new Thread(() -> {
             for (int i = 2; i <= NUMBER_OF_ADMIN_MESSAGES; i++) {
                 session.send(createAdminMessage(i));
             }
         }, "SessionSend");
+        messageSender.setDaemon(true);
 
         // submit threads to pausable executor and try to let them start at the same time
         PausableThreadPoolExecutor ptpe = new PausableThreadPoolExecutor();
@@ -85,6 +83,8 @@ public class SessionResetTest {
         long[] threadIds = bean.findDeadlockedThreads();
         assertNull("no threads should be deadlocked", threadIds);
         assertTrue("session should have been reset", responder.onResetCalled);
+        
+        ptpe.shutdownNow();
     }
 
     private Message createAdminMessage(int sequence) {
@@ -92,7 +92,7 @@ public class SessionResetTest {
         msg.getHeader().setString(SenderCompID.FIELD, "TARGET");
         msg.getHeader().setString(TargetCompID.FIELD, "SENDER");
         msg.getHeader().setInt(MsgSeqNum.FIELD, sequence);
-        msg.getHeader().setUtcTimeStamp(SendingTime.FIELD, new Date());
+        msg.getHeader().setUtcTimeStamp(SendingTime.FIELD, LocalDateTime.now());
         return msg;
     }
 
@@ -138,45 +138,4 @@ public class SessionResetTest {
         }
     }
 
-    private class PausableThreadPoolExecutor extends ThreadPoolExecutor {
-        private boolean isPaused;
-        private final ReentrantLock pauseLock = new ReentrantLock();
-        private final Condition unpaused = pauseLock.newCondition();
-
-        public PausableThreadPoolExecutor() {
-            super(2, 2, 20, TimeUnit.SECONDS, new ArrayBlockingQueue<>(10000));
-        }
-
-        protected void beforeExecute(Thread t, Runnable r) {
-            super.beforeExecute(t, r);
-            pauseLock.lock();
-            try {
-                while (isPaused)
-                    unpaused.await();
-            } catch (InterruptedException ie) {
-                t.interrupt();
-            } finally {
-                pauseLock.unlock();
-            }
-        }
-
-        public void pause() {
-            pauseLock.lock();
-            try {
-                isPaused = true;
-            } finally {
-                pauseLock.unlock();
-            }
-        }
-
-        public void resume() {
-            pauseLock.lock();
-            try {
-                isPaused = false;
-                unpaused.signalAll();
-            } finally {
-                pauseLock.unlock();
-            }
-        }
-    }
 }

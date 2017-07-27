@@ -29,12 +29,7 @@ import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class DefaultSessionFactoryTest {
 
@@ -47,7 +42,7 @@ public class DefaultSessionFactoryTest {
         sessionID = new SessionID(FixVersions.BEGINSTRING_FIX42, "SENDER", "TARGET");
         setUpDefaultSettings(sessionID);
         factory = new DefaultSessionFactory(new ATApplication(), new MemoryStoreFactory(),
-                new ScreenLogFactory(true, true, true));
+                new SLF4JLogFactory(new SessionSettings()));
     }
 
     @Test
@@ -60,7 +55,7 @@ public class DefaultSessionFactoryTest {
         sessionID = new SessionID(FixVersions.BEGINSTRING_FIXT11, "SENDER", "TARGET");
         setUpDefaultSettings(sessionID);
         factory = new DefaultSessionFactory(new ATApplication(), new MemoryStoreFactory(),
-                new ScreenLogFactory(true, true, true));
+                new SLF4JLogFactory(new SessionSettings()));
         Exception e = null;
         try {
             factory.create(sessionID, settings);
@@ -220,6 +215,23 @@ public class DefaultSessionFactoryTest {
     public void testReconnectIntervalInDefaultSession() throws Exception {
         settings.setString(sessionID, "ReconnectInterval", "2x5;3x15");
         factory.create(sessionID, settings);
+    }
+    
+    @Test
+    // QFJ-873
+    public void testTimestampPrecision() throws Exception {
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "FOO");
+        createSessionAndAssertConfigError("no exception", ".*No enum constant quickfix.UtcTimestampPrecision.FOO.*");
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "SECONDS");
+        factory.create(sessionID, settings);
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "MILLIS");
+        factory.create(sessionID, settings);
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "NANOS");
+        factory.create(sessionID, settings);
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "MICROS");
+        factory.create(sessionID, settings);
+        settings.setString(Session.SETTING_TIMESTAMP_PRECISION, "PICOS");
+        createSessionAndAssertConfigError("no exception", ".*No enum constant quickfix.UtcTimestampPrecision.PICOS.*");
     }
 
 }

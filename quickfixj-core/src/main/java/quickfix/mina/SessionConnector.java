@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.ConfigError;
 import quickfix.Connector;
+import quickfix.ExecutorFactory;
 import quickfix.FieldConvertError;
 import quickfix.Session;
 import quickfix.SessionFactory;
@@ -42,6 +43,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -55,7 +58,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class SessionConnector implements Connector {
     protected static final int DEFAULT_QUEUE_CAPACITY = 10000;
     public static final String SESSIONS_PROPERTY = "sessions";
-    public final static String QF_SESSION = "QF_SESSION";
+    public static final String QF_SESSION = "QF_SESSION";
+    public static final String QFJ_RESET_IO_CONNECTOR = "QFJ_RESET_IO_CONNECTOR";
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -69,6 +73,9 @@ public abstract class SessionConnector implements Connector {
     private ScheduledFuture<?> sessionTimerFuture;
     private IoFilterChainBuilder ioFilterChainBuilder;
 
+    protected Executor longLivedExecutor;
+    protected Executor shortLivedExecutor;
+
     public SessionConnector(SessionSettings settings, SessionFactory sessionFactory) throws ConfigError {
         this.settings = settings;
         this.sessionFactory = sessionFactory;
@@ -76,6 +83,28 @@ public abstract class SessionConnector implements Connector {
             throw new ConfigError("no settings");
         }
     }
+
+	/**
+	 * <p>
+	 * Supplies the Executors to be used for all message processing and timer activities. This will override the default
+	 * behavior which uses internally created Threads. This enables scenarios such as a ResourceAdapter to supply the
+	 * WorkManager (when adapted to the Executor API) so that all Application call-backs occur on container managed
+	 * threads.
+	 * </p>
+	 * <p>
+	 * If using external Executors, this method should be called immediately after the constructor. Once set, the
+	 * Executors cannot be changed.
+	 * </p>
+	 * 
+	 * @param executorFactory See {@link ExecutorFactory} for detailed requirements.
+	 */
+	public void setExecutorFactory(ExecutorFactory executorFactory) {
+		if (longLivedExecutor != null || shortLivedExecutor!=null) {
+			throw new IllegalStateException("Optional ExecutorFactory has already been set.  It cannot be changed once set.");
+		}
+		longLivedExecutor = executorFactory.getLongLivedExecutor();
+		shortLivedExecutor = executorFactory.getShortLivedExecutor();
+	}
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         propertyChangeSupport.addPropertyChangeListener(listener);
@@ -190,20 +219,20 @@ public abstract class SessionConnector implements Connector {
             }
         }
 
-        if (forceDisconnect && isLoggedOn()) {
-            for (Session session : sessions.values()) {
-                try {
-                    if (session.isLoggedOn()) {
-                        session.disconnect("Forcibly disconnecting session", false);
+        if (isLoggedOn()) {
+            if (forceDisconnect) {
+                for (Session session : sessions.values()) {
+                    try {
+                        if (session.isLoggedOn()) {
+                            session.disconnect("Forcibly disconnecting session", false);
+                        }
+                    } catch (Throwable e) {
+                        logError(session.getSessionID(), null, "Error during disconnect", e);
                     }
-                } catch (Throwable e) {
-                    logError(session.getSessionID(), null, "Error during disconnect", e);
                 }
+            } else {
+                waitForLogout();
             }
-        }
-
-        if (!forceDisconnect) {
-            waitForLogout();
         }
     }
 
@@ -253,14 +282,18 @@ public abstract class SessionConnector implements Connector {
     }
 
     protected void startSessionTimer() {
-        sessionTimerFuture = scheduledExecutorService.scheduleAtFixedRate(new SessionTimerTask(), 0, 1000L,
+		Runnable timerTask = new SessionTimerTask();
+		if (shortLivedExecutor != null) {
+			timerTask = new DelegatingTask(timerTask, shortLivedExecutor);
+		}
+		sessionTimerFuture = scheduledExecutorService.scheduleAtFixedRate(timerTask, 0, 1000L,
                 TimeUnit.MILLISECONDS);
         log.info("SessionTimer started");
     }
 
     protected void stopSessionTimer() {
         if (sessionTimerFuture != null) {
-            if (sessionTimerFuture.cancel(false))
+            if (sessionTimerFuture.cancel(true))
                 log.info("SessionTimer canceled");
         }
     }
@@ -284,6 +317,59 @@ public abstract class SessionConnector implements Connector {
             }
         }
     }
+
+    /**
+     * Delegates QFJ Timer Task to an Executor and blocks the QFJ Timer Thread until
+     * the Task execution completes.
+     */
+	static final class DelegatingTask implements Runnable {
+
+		private final BlockingSupportTask delegate;
+		private final Executor executor;
+
+		DelegatingTask(Runnable delegate, Executor executor) {
+			this.delegate = new BlockingSupportTask(delegate);
+			this.executor = executor;
+		}
+
+		@Override
+		public void run() {
+			executor.execute(delegate);
+			try {
+				delegate.await();
+			} catch (InterruptedException e) {
+			}
+		}
+
+		static final class BlockingSupportTask implements Runnable {
+
+			private final CountDownLatch latch = new CountDownLatch(1);
+			private final Runnable delegate;
+
+			BlockingSupportTask(Runnable delegate) {
+				this.delegate = delegate;
+			}
+
+			@Override
+			public void run() {
+				Thread currentThread = Thread.currentThread();
+				String threadName = currentThread.getName();
+				try {
+					currentThread.setName("QFJ Timer (" + threadName + ")");
+					delegate.run();
+				} finally {
+					latch.countDown();
+					currentThread.setName(threadName);
+				}
+			}
+
+			void await() throws InterruptedException {
+				latch.await();
+			}
+
+		}
+
+	}
 
     private static class QFTimerThreadFactory implements ThreadFactory {
 
