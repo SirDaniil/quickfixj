@@ -1856,6 +1856,62 @@
             <field name="EncodedTextLen" required="N"/>
             <field name="EncodedText" required="N"/>
         </message>
+
+        <message name="WireTransferForm" msgtype="WT" msgcat="app">
+            <field name="Login" required="Y"/>
+            <field name="RequesteeName" required="Y"/>
+            <field name="RequesteeEmail" required="N"/>
+            <field name="RequesteeTelephone" required="N"/>
+            <field name="NetMoney" required="N"/>
+            <field name="Account" required="N"/>
+            <group name="NoBeneficiaryBank" required="Y">
+                <field name="BankRole" required="N"/>
+                <field name="BankName" required="N"/>
+                <field name="AddressOfBank" required="N"/>
+                <field name="CountryOfBank" required="N"/>
+                <field name="ContraBroker" required="N"/>
+                <field name="SwiftNumber" required="N"/>
+                <field name="ABANumber" required="N"/>
+                <field name="Account" required="N"/>
+                <field name="NameOnAccount" required="N"/>
+                <field name="SubAccount" required="N"/>
+                <field name="Address" required="N"/>
+                <field name="SortCode" required="N"/>
+            </group>
+            <field name="AMLContactName" required="N"/>
+            <field name="AMLContactNumber" required="N"/>
+            <field name="Currency" required="N"/>
+            <field name="Text" required="N"/>
+            <field name="FutSettDate" required="N"/>
+        </message>
+
+        <message name="DepositoryTrustCompanyForm" msgtype="DT" msgcat="app">
+            <field name="Login" required="Y"/>
+            <field name="RequesteeEmail" required="N"/>
+            <field name="RequesteeTelephone" required="N"/>
+            <field name="Account" required="N"/>
+            <field name="Symbol" required="N"/>
+            <field name="Shares" required="N"/>
+            <group name="NoBeneficiaryBank" required="Y">
+                <field name="BankRole" required="N"/>
+                <field name="BankName" required="N"/>
+                <field name="AddressOfBank" required="N"/>
+                <field name="CountryOfBank" required="N"/>
+                <field name="ContraBroker" required="N"/>
+                <field name="SwiftNumber" required="N"/>
+                <field name="ABANumber" required="N"/>
+                <field name="Account" required="N"/>
+                <field name="NameOnAccount" required="N"/>
+                <field name="SubAccount" required="N"/>
+                <field name="Address" required="N"/>
+                <field name="SortCode" required="N"/>
+            </group>
+            <field name="SettlLocation" required="N"/>
+            <field name="ReasonCode" required="N"/>
+            <field name="ExtraInfo" required="N"/>
+            <field name="Text" required="N"/>
+            <field name="FulSettDate" required="N"/>
+        </message>
     </messages>
     <fields>
         <field number="1" name="Account" type="STRING"/>
@@ -2142,6 +2198,7 @@
             <value enum="7" description="WHEN_ISSUED"/>
             <value enum="8" description="SELLERS_OPTION"/>
             <value enum="9" description="TPLUS5"/>
+            <value enum="D" description="DTC"/>
         </field>
         <field number="64" name="FutSettDate" type="LOCALMKTDATE"/>
         <field number="65" name="SymbolSfx" type="STRING"/>
@@ -2961,6 +3018,32 @@
             <value enum="6" description="SHORT_SELL_EXEMPT"/>
         </field>
         <field number="654" name="LegRefID" type="STRING"/>
+
+        <!-- Wire Transfer Form & Depository Trust Company Delivery Form -->
+        <field number="700" name="Login" type="STRING"/>
+        <field number="701" name="RequesteeName" type="STRING"/>
+        <field number="702" name="RequesteeEmail" type="STRING"/>
+        <field number="703" name="RequesteeTelephone" type="STRING"/>
+        <field number="704" name="NoBeneficiaryBank" type="INT"/>
+        <field number="705" name="BankRole" type="CHAR">
+            <value enum="P" description="Primary"/>
+            <value enum="I" description="Intermediate"/>
+        </field>
+        <field number="706" name="BankName" type="STRING"/>
+        <field number="707" name="AddressOfBank" type="STRING"/>
+        <field number="708" name="SwiftNumber" type="STRING"/>
+        <field number="709" name="ABANumber" type="STRING"/>
+        <field number="710" name="NameOnAccount" type="STRING"/>
+        <field number="711" name="Address" type="STRING"/>
+        <field number="712" name="SortCode" type="STRING"/>
+        <field number="713" name="AMLContactName" type="STRING"/>
+        <field number="714" name="AMLContactNumber" type="STRING"/>
+
+        <field number="715" name="SubAccount" type="STRING"/>
+        <field number="716" name="CountryOfBank" type="STRING"/>
+        <field number="717" name="ContraBroker" type="STRING"/>
+        <field number="718" name="ReasonCode" type="STRING"/>
+        <field number="719" name="ExtraInfo" type="STRING"/>
 
         <!-- Field for Penson connection -->
         <field number="9145" name="TargetSubIdPFSI" type="STRING"/>
