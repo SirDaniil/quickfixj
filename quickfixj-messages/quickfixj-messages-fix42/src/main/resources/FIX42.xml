@@ -1857,8 +1857,8 @@
             <field name="EncodedText" required="N"/>
         </message>
 
-        <message name="WireTransferForm" msgtype="WT" msgcat="app">
-            <field name="Login" required="Y"/>
+        <message name="NewWireTransferRequest" msgtype="WT" msgcat="app">
+            <field name="RequesteeLogin" required="Y"/>
             <field name="RequesteeName" required="Y"/>
             <field name="RequesteeEmail" required="N"/>
             <field name="RequesteeTelephone" required="N"/>
@@ -1885,8 +1885,8 @@
             <field name="FutSettDate" required="N"/>
         </message>
 
-        <message name="DepositoryTrustCompanyForm" msgtype="DT" msgcat="app">
-            <field name="Login" required="Y"/>
+        <message name="NewDTCRequest" msgtype="DT" msgcat="app">
+            <field name="RequesteeLogin" required="Y"/>
             <field name="RequesteeEmail" required="N"/>
             <field name="RequesteeTelephone" required="N"/>
             <field name="Account" required="N"/>
@@ -3020,7 +3020,7 @@
         <field number="654" name="LegRefID" type="STRING"/>
 
         <!-- Wire Transfer Form & Depository Trust Company Delivery Form -->
-        <field number="700" name="Login" type="STRING"/>
+        <field number="700" name="RequesteeLogin" type="STRING"/>
         <field number="701" name="RequesteeName" type="STRING"/>
         <field number="702" name="RequesteeEmail" type="STRING"/>
         <field number="703" name="RequesteeTelephone" type="STRING"/>
