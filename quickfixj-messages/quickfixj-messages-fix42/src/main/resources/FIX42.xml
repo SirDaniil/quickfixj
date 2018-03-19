@@ -1862,8 +1862,9 @@
             <field name="RequesteeName" required="Y"/>
             <field name="RequesteeEmail" required="N"/>
             <field name="RequesteeTelephone" required="N"/>
-            <field name="NetMoney" required="N"/>
-            <field name="Account" required="N"/>
+            <field name="OrderID" required="Y"/>
+            <field name="NetMoney" required="Y"/>
+            <field name="Account" required="Y"/>
             <group name="NoBeneficiaryBank" required="Y">
                 <field name="BankRole" required="Y"/>
                 <field name="BankName" required="N"/>
@@ -1882,16 +1883,17 @@
             <field name="AMLContactNumber" required="N"/>
             <field name="Currency" required="N"/>
             <field name="Text" required="N"/>
-            <field name="FutSettDate" required="N"/>
+            <field name="FutSettDate" required="Y"/>
         </message>
 
         <message name="NewDTCRequest" msgtype="dtc" msgcat="app">
             <field name="RequesteeLogin" required="Y"/>
             <field name="RequesteeEmail" required="N"/>
             <field name="RequesteeTelephone" required="N"/>
-            <field name="Account" required="N"/>
-            <field name="Symbol" required="N"/>
-            <field name="Shares" required="N"/>
+            <field name="OrderID" required="Y"/>
+            <field name="Account" required="Y"/>
+            <field name="Symbol" required="Y"/>
+            <field name="Shares" required="Y"/>
             <group name="NoBeneficiaryBank" required="Y">
                 <field name="BankRole" required="Y"/>
                 <field name="BankName" required="N"/>
@@ -1910,7 +1912,16 @@
             <field name="ReasonCode" required="N"/>
             <field name="ExtraInfo" required="N"/>
             <field name="Text" required="N"/>
-            <field name="FutSettDate" required="N"/>
+            <field name="FutSettDate" required="Y"/>
+        </message>
+
+        <message name="FormSubmitReport" msgtype="fsr" msgcat="app">
+            <field name="FormSubmitType" required="Y"/>
+            <field name="ClOrdID" required="Y"/>
+            <field name="OrderID" required="Y"/>
+            <field name="ExecID" required="Y"/>
+            <field name="OrdStatus" required="Y" />
+            <field name="Text" required="N"/>
         </message>
     </messages>
     <fields>
@@ -2074,9 +2085,10 @@
             <value enum="AC" description="MULTILEG_ORDER_CANCEL" />
             <value enum="ALGO" description="ORDER_ALGO" />
             <value enum="SL" description="STOCK_LOCATE" />
-            <value enum="SL8" description="STOCK_LOCATE_REPORT" />
-            <value enum="dtc" description="NEW_DTC_REQUEST" />
-            <value enum="wt" description="NEW_WIRE_TRANSFER_REQUEST" />
+            <value enum="SL8" description="STOCK_LOCATE_REPORT"/>
+            <value enum="dtc" description="NEW_DTC_REQUEST"/>
+            <value enum="wt" description="NEW_WIRE_TRANSFER_REQUEST"/>
+            <value enum="fsr" description="FORM_SUBMIT_REPORT"/>
         </field>
         <field number="36" name="NewSeqNo" type="INT"/>
         <field number="37" name="OrderID" type="STRING"/>
@@ -3047,6 +3059,10 @@
         <field number="718" name="BankContraBroker" type="STRING"/>
         <field number="719" name="ReasonCode" type="STRING"/>
         <field number="720" name="ExtraInfo" type="STRING"/>
+        <field number="721" name="FormSubmitType" type="CHAR">
+            <value enum="1" description="DTC_DELIVERY"/>
+            <value enum="2" description="WIRE_TRANSFER"/>
+        </field>
 
         <!-- Field for Penson connection -->
         <field number="9145" name="TargetSubIdPFSI" type="STRING"/>
