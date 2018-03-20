@@ -1,6 +1,7 @@
 QuickFIX/J
 ==========
 
+[![Status](https://travis-ci.org/SirDaniil/quickfixj.svg?branch=master)
 [![Build Status](https://travis-ci.org/quickfix-j/quickfixj.svg?branch=master)](https://travis-ci.org/quickfix-j/quickfixj)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.quickfixj/quickfixj-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.quickfixj/quickfixj-core)
 
